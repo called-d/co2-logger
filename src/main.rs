@@ -10,6 +10,7 @@ use std::time::SystemTime;
 fn read() -> Result<(SystemTime, Reading), Box<dyn Error>> {
     let sensor = Sensor::open_default()?;
     let reading = sensor.read()?;
+    // .read() は CO2 と気温が両方取れるまでブロッキングするので、時刻を取るなら値が返った瞬間のほうがよい
     let now = SystemTime::now();
     Ok((now, reading))
 }
@@ -23,9 +24,8 @@ fn append_log(dir: &Path, file_name: String, line: String) -> Result<(), std::io
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let args: Vec<String> = env::args().collect();
-    let arg = args[1..].first().expect("$ co2-logger <log-directory>");
-    let dir = Path::new(arg);
+    let args: Vec<String> = env::args().skip(1).collect();
+    let dir = Path::new(args.first().expect("$ co2-logger <log-directory>"));
     assert!(dir.exists() && dir.is_dir());
 
     let (now, reading) = read()?;
@@ -34,7 +34,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     let timestamp = unixtime.as_secs();
     let (co2, temperature) = (reading.co2(), reading.temperature());
 
-    let datetime: DateTime<Local> = now.clone().into();
+    let datetime: DateTime<Local> = now.into();
     let file_name = datetime.format("%F").to_string();
     let line = format!("{:?}\t{:?}\t{:?}", timestamp, co2, temperature);
     append_log(dir, file_name, line)?;
