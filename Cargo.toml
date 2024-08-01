@@ -1,0 +1,8 @@
+[package]
+name = "co2-logger"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+chrono = "0.4.38"
+co2mon = { version = "2.1.1", default-features = false, features = ["linux-shared-hidraw"] }
